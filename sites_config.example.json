@@ -1,0 +1,32 @@
+[
+  {
+    "name": "本地后端服务",
+    "host": "localhost",
+    "port": "8008",
+    "protocol": "http",
+    "path": "/api/v1",
+    "group": "本地开发",
+    "username": "admin",
+    "password": "123456"
+  },
+  {
+    "name": "前端开发服务器",
+    "host": "localhost",
+    "port": "3000",
+    "protocol": "http",
+    "path": "",
+    "group": "本地开发",
+    "username": "",
+    "password": ""
+  },
+  {
+    "name": "测试环境API",
+    "host": "192.168.1.100",
+    "port": "8080",
+    "protocol": "http",
+    "path": "/api",
+    "group": "测试环境",
+    "username": "testuser",
+    "password": "testpass"
+  }
+]

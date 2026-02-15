@@ -1,0 +1,42 @@
+[
+  {
+    "type": "前端",
+    "site_name": "工厂监控系统",
+    "version": "v1.2.3",
+    "environment": "生产环境",
+    "status": "成功",
+    "deploy_time": "2026-02-15 14:30:00",
+    "deployer": "张三",
+    "notes": "更新了数据可视化组件，优化了页面加载速度"
+  },
+  {
+    "type": "后端",
+    "site_name": "工厂监控系统API",
+    "version": "v2.1.0",
+    "environment": "生产环境",
+    "status": "成功",
+    "deploy_time": "2026-02-14 10:15:00",
+    "deployer": "李四",
+    "notes": "新增设备管理接口，修复了数据同步bug"
+  },
+  {
+    "type": "进程服务",
+    "site_name": "MQTT消息处理服务",
+    "version": "v1.5.2",
+    "environment": "生产环境",
+    "status": "成功",
+    "deploy_time": "2026-02-13 16:45:00",
+    "deployer": "王五",
+    "notes": "优化了消息队列处理逻辑，提升了并发性能"
+  },
+  {
+    "type": "数据库",
+    "site_name": "生产数据库",
+    "version": "v8.0.32",
+    "environment": "生产环境",
+    "status": "成功",
+    "deploy_time": "2026-02-10 02:00:00",
+    "deployer": "赵六",
+    "notes": "数据库版本升级，添加了新的索引优化查询性能"
+  }
+]
