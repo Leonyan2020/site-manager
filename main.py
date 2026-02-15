@@ -499,14 +499,17 @@ class SiteManager(QMainWindow):
         # 操作按钮
         button_layout = QHBoxLayout()
         add_deployment_btn = QPushButton("➕ 添加记录")
+        edit_deployment_btn = QPushButton("✏️ 编辑记录")
         delete_deployment_btn = QPushButton("🗑️ 删除记录")
         refresh_btn = QPushButton("🔄 刷新")
 
         add_deployment_btn.clicked.connect(self.add_deployment)
+        edit_deployment_btn.clicked.connect(self.edit_deployment)
         delete_deployment_btn.clicked.connect(self.delete_deployment)
         refresh_btn.clicked.connect(self.refresh_deployments)
 
         button_layout.addWidget(add_deployment_btn)
+        button_layout.addWidget(edit_deployment_btn)
         button_layout.addWidget(delete_deployment_btn)
         button_layout.addWidget(refresh_btn)
         button_layout.addStretch()
@@ -694,6 +697,38 @@ class SiteManager(QMainWindow):
             self.save_deployments()
             self.refresh_deployments()
 
+    def edit_deployment(self):
+        """编辑部署记录"""
+        current_row = self.deployment_table.currentRow()
+        if current_row < 0:
+            QMessageBox.warning(self, "警告", "请先选择要编辑的记录！")
+            return
+
+        # 从第一列获取存储的部署数据
+        time_item = self.deployment_table.item(current_row, 0)
+        if not time_item:
+            return
+
+        deployment_data = time_item.data(Qt.UserRole)
+        if not deployment_data:
+            return
+
+        dialog = DeploymentDialog(self, deployment_data=deployment_data)
+        if dialog.exec():
+            new_data = dialog.get_deployment_data()
+            if not new_data["site_name"]:
+                QMessageBox.warning(self, "警告", "站点名称不能为空！")
+                return
+
+            # 在原始列表中找到并更新数据
+            for i, dep in enumerate(self.deployments):
+                if dep == deployment_data:
+                    self.deployments[i] = new_data
+                    break
+
+            self.save_deployments()
+            self.refresh_deployments()
+
     def delete_deployment(self):
         """删除部署记录"""
         current_row = self.deployment_table.currentRow()
@@ -701,14 +736,28 @@ class SiteManager(QMainWindow):
             QMessageBox.warning(self, "警告", "请先选择要删除的记录！")
             return
 
+        # 从第一列获取存储的部署数据
+        time_item = self.deployment_table.item(current_row, 0)
+        if not time_item:
+            return
+
+        deployment_data = time_item.data(Qt.UserRole)
+        if not deployment_data:
+            return
+
         reply = QMessageBox.question(
             self, "确认删除",
-            "确定要删除这条部署记录吗？",
+            f"确定要删除站点 '{deployment_data.get('site_name', '')}' 的部署记录吗？",
             QMessageBox.Yes | QMessageBox.No
         )
 
         if reply == QMessageBox.Yes:
-            del self.deployments[current_row]
+            # 在原始列表中找到并删除数据
+            for i, dep in enumerate(self.deployments):
+                if dep == deployment_data:
+                    del self.deployments[i]
+                    break
+
             self.save_deployments()
             self.refresh_deployments()
 
@@ -728,7 +777,10 @@ class SiteManager(QMainWindow):
             self.deployment_table.insertRow(row)
 
             # 设置单元格内容
-            self.deployment_table.setItem(row, 0, QTableWidgetItem(deployment.get("deploy_time", "")))
+            time_item = QTableWidgetItem(deployment.get("deploy_time", ""))
+            time_item.setData(Qt.UserRole, deployment)  # 存储部署数据引用
+            self.deployment_table.setItem(row, 0, time_item)
+
             self.deployment_table.setItem(row, 1, QTableWidgetItem(deployment.get("type", "")))
             self.deployment_table.setItem(row, 2, QTableWidgetItem(deployment.get("site_name", "")))
             self.deployment_table.setItem(row, 3, QTableWidgetItem(deployment.get("version", "")))

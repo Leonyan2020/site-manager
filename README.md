@@ -98,6 +98,11 @@ pyinstaller --name="SiteManager" --onefile --windowed --icon=asww.ico --add-data
    - 备注：部署说明、变更内容等
 4. 点击"保存"
 
+#### 编辑部署记录
+
+- 选中记录后点击"✏️ 编辑记录"按钮
+- 修改信息后保存
+
 #### 查看部署历史
 
 - 部署记录按时间倒序显示
@@ -110,6 +115,7 @@ pyinstaller --name="SiteManager" --onefile --windowed --icon=asww.ico --add-data
 #### 删除部署记录
 
 - 选中记录后点击"🗑️ 删除记录"按钮
+- 确认后删除
 
 ## 配置文件
 
