@@ -351,6 +351,15 @@ class SiteDialog(QDialog):
         layout.addWidget(password_label)
         layout.addWidget(self.password_input)
 
+        # 备注（可选）
+        description_label = QLabel("备注（可选）:")
+        self.description_input = QTextEdit()
+        self.description_input.setPlaceholderText("站点描述、用途说明等...")
+        self.description_input.setMaximumHeight(80)
+        self.description_input.setText(self.site_data.get("description", ""))
+        layout.addWidget(description_label)
+        layout.addWidget(self.description_input)
+
         # 按钮
         button_layout = QHBoxLayout()
         save_btn = QPushButton("保存")
@@ -373,14 +382,15 @@ class SiteDialog(QDialog):
             "path": self.path_input.text().strip(),
             "group": self.group_combo.currentText().strip(),
             "username": self.username_input.text().strip(),
-            "password": self.password_input.text().strip()
+            "password": self.password_input.text().strip(),
+            "description": self.description_input.toPlainText().strip()
         }
 
 
 class SiteManager(QMainWindow):
     """站点管理主窗口"""
 
-    VERSION = "v2.0.2"
+    VERSION = "v2.0.3"
 
     def __init__(self):
         super().__init__()
@@ -592,6 +602,15 @@ class SiteManager(QMainWindow):
             display_text = f"{site['name']} - {url}"
             item = QListWidgetItem(display_text)
             item.setData(Qt.UserRole, site)
+
+            # 如果有备注，设置为tooltip
+            description = site.get("description", "").strip()
+            if description:
+                tooltip = f"站点: {site['name']}\nURL: {url}\n\n备注:\n{description}"
+                item.setToolTip(tooltip)
+            else:
+                item.setToolTip(f"站点: {site['name']}\nURL: {url}")
+
             self.site_list.addItem(item)
 
     def build_url(self, site):
