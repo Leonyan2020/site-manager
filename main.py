@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QPushButton, QListWidget, QListWidgetItem, QDialog, QLabel,
     QLineEdit, QComboBox, QMessageBox, QGroupBox, QSplitter,
     QTabWidget, QTableWidget, QTableWidgetItem, QHeaderView,
-    QTextEdit, QDateTimeEdit, QFrame
+    QTextEdit, QDateTimeEdit, QFrame, QMenu, QInputDialog
 )
 from PySide6.QtCore import Qt, QSize, QDateTime
 from PySide6.QtGui import QIcon, QColor
@@ -380,6 +380,8 @@ class SiteDialog(QDialog):
 class SiteManager(QMainWindow):
     """站点管理主窗口"""
 
+    VERSION = "v2.0.2"
+
     def __init__(self):
         super().__init__()
         self.config_file = Path("sites_config.json")
@@ -391,7 +393,7 @@ class SiteManager(QMainWindow):
         self.init_ui()
 
     def init_ui(self):
-        self.setWindowTitle("站点访问管理器")
+        self.setWindowTitle(f"站点访问管理器 {self.VERSION}")
         self.setMinimumSize(1000, 700)
         self.setStyleSheet(MODERN_STYLE)
 
@@ -410,6 +412,7 @@ class SiteManager(QMainWindow):
         self.tab_widget = QTabWidget()
         self.tab_widget.addTab(self.create_sites_tab(), "站点管理")
         self.tab_widget.addTab(self.create_deployments_tab(), "部署记录")
+        self.tab_widget.addTab(self.create_about_tab(), "关于")
         main_layout.addWidget(self.tab_widget)
 
     def create_sites_tab(self):
@@ -423,6 +426,8 @@ class SiteManager(QMainWindow):
         left_layout = QVBoxLayout()
         self.group_list = QListWidget()
         self.group_list.itemClicked.connect(self.on_group_selected)
+        self.group_list.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.group_list.customContextMenuRequested.connect(self.show_group_context_menu)
         left_layout.addWidget(self.group_list)
         left_panel.setLayout(left_layout)
         left_panel.setMaximumWidth(220)
@@ -613,6 +618,64 @@ class SiteManager(QMainWindow):
         group_name = item.text()
         self.refresh_sites(group_name)
 
+    def show_group_context_menu(self, position):
+        """显示分组右键菜单"""
+        item = self.group_list.itemAt(position)
+        if not item:
+            return
+
+        group_name = item.text()
+        # "全部站点"不允许重命名
+        if group_name == "全部站点":
+            return
+
+        menu = QMenu()
+        rename_action = menu.addAction("重命名分组")
+
+        action = menu.exec(self.group_list.mapToGlobal(position))
+        if action == rename_action:
+            self.rename_group(group_name)
+
+    def rename_group(self, old_name):
+        """重命名分组"""
+        new_name, ok = QInputDialog.getText(
+            self,
+            "重命名分组",
+            f"请输入新的分组名称（当前: {old_name}）:",
+            text=old_name
+        )
+
+        if not ok or not new_name.strip():
+            return
+
+        new_name = new_name.strip()
+
+        # 检查新名称是否已存在
+        if new_name in self.get_groups() and new_name != old_name:
+            QMessageBox.warning(self, "警告", f"分组 '{new_name}' 已存在！")
+            return
+
+        # 检查是否为保留名称
+        if new_name == "全部站点":
+            QMessageBox.warning(self, "警告", "不能使用保留名称 '全部站点'！")
+            return
+
+        # 更新所有使用该分组的站点
+        updated_count = 0
+        for site in self.sites:
+            if site.get("group", "默认分组") == old_name:
+                site["group"] = new_name
+                updated_count += 1
+
+        if updated_count > 0:
+            self.save_config()
+            self.refresh_groups()
+            self.refresh_sites()
+            QMessageBox.information(self, "成功", f"已将 {updated_count} 个站点的分组从 '{old_name}' 更新为 '{new_name}'")
+        else:
+            QMessageBox.information(self, "提示", f"分组 '{old_name}' 下没有站点")
+
+
     def add_site(self):
         """添加站点"""
         dialog = SiteDialog(self, groups=self.get_groups())
@@ -801,6 +864,63 @@ class SiteManager(QMainWindow):
 
             self.deployment_table.setItem(row, 6, QTableWidgetItem(deployment.get("deployer", "")))
             self.deployment_table.setItem(row, 7, QTableWidgetItem(deployment.get("notes", "")))
+
+    def create_about_tab(self):
+        """创建关于标签页"""
+        about_widget = QWidget()
+        about_layout = QVBoxLayout(about_widget)
+        about_layout.setContentsMargins(20, 20, 20, 20)
+
+        # 标题
+        title_label = QLabel(f"站点访问管理器 {self.VERSION}")
+        title_label.setStyleSheet("font-size: 18pt; font-weight: 700; color: #2196F3; margin-bottom: 10px;")
+        about_layout.addWidget(title_label)
+
+        # 描述
+        desc_label = QLabel("简易的站点地址和端口配置管理器")
+        desc_label.setStyleSheet("font-size: 11pt; color: #757575; margin-bottom: 20px;")
+        about_layout.addWidget(desc_label)
+
+        # 分隔线
+        line = QFrame()
+        line.setFrameShape(QFrame.HLine)
+        line.setFrameShadow(QFrame.Sunken)
+        about_layout.addWidget(line)
+
+        # 更新记录标题
+        changelog_title = QLabel("更新记录")
+        changelog_title.setStyleSheet("font-size: 14pt; font-weight: 600; color: #424242; margin-top: 15px; margin-bottom: 10px;")
+        about_layout.addWidget(changelog_title)
+
+        # 更新记录内容
+        changelog_text = QTextEdit()
+        changelog_text.setReadOnly(True)
+        changelog_text.setStyleSheet("""
+            QTextEdit {
+                border: 2px solid #E0E0E0;
+                border-radius: 8px;
+                background-color: #FAFAFA;
+                padding: 15px;
+                font-family: "Consolas", "Monaco", monospace;
+                font-size: 9pt;
+            }
+        """)
+
+        # 读取CHANGELOG.md文件
+        changelog_file = Path(__file__).parent / "CHANGELOG.md"
+        if changelog_file.exists():
+            try:
+                with open(changelog_file, 'r', encoding='utf-8') as f:
+                    changelog_content = f.read()
+                changelog_text.setPlainText(changelog_content)
+            except Exception as e:
+                changelog_text.setPlainText(f"无法读取更新记录: {str(e)}")
+        else:
+            changelog_text.setPlainText("更新记录文件不存在")
+
+        about_layout.addWidget(changelog_text)
+
+        return about_widget
 
 
 def main():
